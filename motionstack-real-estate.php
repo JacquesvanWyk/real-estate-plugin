@@ -18,14 +18,26 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly.
 }
 
+//add the required class file
+require('includes/cf_fields.php');
+
 class RealEstate {
     public function __construct()
     {
-        add_action('init',array($this, 'wpdocs_codex_Property_init'));
+        // Create Custom Post Types
+        add_action('init',array($this, 'ms_register_property'));
+        add_action( 'init', 'ms_register_rentals' );
+
+        // Create Taxonomies
         add_action('init',array($this, 'wpdocs_create_property_taxonomies'));
+
+        // Add Assets (js, css, etc)
+        add_action('admin_enqueue_scripts', array($this, 'load_assets'));
+
+
     }
 
-    public function wpdocs_codex_Property_init() {
+    public function ms_register_property() {
         $labels = array(
             'name'                  => _x( 'Properties', 'Post type general name', 'textdomain' ),
             'singular_name'         => _x( 'Property', 'Post type singular name', 'textdomain' ),
@@ -65,8 +77,8 @@ class RealEstate {
             'has_archive'        => true,
             'hierarchical'       => false,
             'menu_position'      => null,
-            'menu_icon'          => 'dashicons-schedule',
-            'supports'           => array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments' ),
+            'menu_icon'          => 'dashicons-admin-home',
+            'supports'           => array( 'title', 'editor', 'thumbnail' ),
         );
 
         register_post_type( 'Property', $args );
@@ -102,9 +114,75 @@ class RealEstate {
         register_taxonomy( 'Type', array( 'property' ), $args );
     }
 
-    
-    
-    
+    public function load_assets()
+    {
+        wp_enqueue_style(
+            'real-estate',
+            plugin_dir_url(__FILE__) . 'css/real-estate.css',
+            array(),
+            1.0,
+            'all'
+        );
+        wp_enqueue_scripts(
+            'real-estate',
+            plugin_dir_url(__FILE__) . 'js/real-estate.js',
+            array(),
+            1,
+            true
+        );
+
+    }
+
+
+
 }
 
 new RealEstate;
+
+function ms_register_rentals() {
+
+    /**
+     * Post Type: Rentals.
+     */
+
+    $labels = [
+        "name" => __( "Rentals", "house-search" ),
+        "singular_name" => __( "Rental", "house-search" ),
+    ];
+
+    $args = [
+        "label" => __( "Rentals", "house-search" ),
+        "labels" => $labels,
+        "description" => "",
+        "public" => true,
+        "publicly_queryable" => true,
+        "show_ui" => true,
+        "show_in_rest" => true,
+        "rest_base" => "",
+        "rest_controller_class" => "WP_REST_Posts_Controller",
+        "has_archive" => false,
+        "show_in_menu" => true,
+        "show_in_nav_menus" => true,
+        "delete_with_user" => false,
+        "exclude_from_search" => false,
+        "capability_type" => "post",
+        "map_meta_cap" => true,
+        "hierarchical" => false,
+        "rewrite" => [ "slug" => "rentals", "with_front" => true ],
+        "query_var" => true,
+        "menu_icon" => "dashicons-admin-home",
+        "supports" => [ "title", "editor", "thumbnail" ],
+        "taxonomies" => [ "rental_type" ],
+        "show_in_graphql" => false,
+    ];
+
+    register_post_type( "rentals", $args );
+}
+
+
+
+
+
+// Hide ACF field group menu item
+// add_filter('acf/settings/show_admin', '__return_false');
+// define( 'ACF_LITE', true );
